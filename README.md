@@ -108,11 +108,12 @@ The New Plant Diseases Dataset (Kaggle) is a comprehensive collection designed f
 ---
 
 ## 📊 Workflow Diagram
+<img width="786" height="344" alt="image" src="https://github.com/user-attachments/assets/a6281ecb-0bb2-40d2-b93e-7628ac0b0315" />
 
-![Workflow](docs/Workflow.png)
 
 ---
 
 ## 📜 License
 This project is for educational purposes.﻿# PlantCare-AI-Advanced-Plant-Disease-Detection-Using-Transfer-Learning
+
 
