@@ -1,119 +1,164 @@
 import os
 import secrets
-import numpy as np
-import tensorflow as tf
-from flask import Flask, request, jsonify, session, render_template, url_for, redirect
-from werkzeug.utils import secure_filename
+from datetime import timedelta
+
+from flask import Flask, jsonify, redirect, render_template, request, send_from_directory, session, url_for
 from PIL import Image
+from werkzeug.utils import secure_filename
 
-app = Flask(__name__)
-app.secret_key = secrets.token_hex(16)
 
-# --- 1. DIRECTORY SETUP ---
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-app.config['UPLOAD_FOLDER'] = os.path.join(BASE_DIR, 'uploads')
-app.config['STATIC_RESULT_FOLDER'] = os.path.join(BASE_DIR, 'static', 'images')
+UPLOAD_FOLDER = os.path.join(BASE_DIR, "_uploads")
+STATIC_FOLDER = os.path.join(BASE_DIR, "static")
+STATIC_IMAGES_FOLDER = os.path.join(STATIC_FOLDER, "images")
 
-os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
-os.makedirs(app.config['STATIC_RESULT_FOLDER'], exist_ok=True)
+ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg", "webp"}
 
-# --- 2. MODEL LOADING ---
-# Replace these with your actual labels in alphabetical order!
-CLASS_NAMES = ['Early Blight', 'Late Blight', 'Healthy'] 
 
-MODEL_PATH = os.path.join(BASE_DIR, 'model.keras')
-model = None
+def ensure_dirs() -> None:
+    os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+    os.makedirs(STATIC_IMAGES_FOLDER, exist_ok=True)
 
-try:
-    if os.path.exists(MODEL_PATH):
-        # We load with compile=False to fix Dense layer input issues
-        model = tf.keras.models.load_model(MODEL_PATH, compile=False)
-        print("✅ SUCCESS: Model loaded successfully.")
-        # Debugging: Print input shape to terminal
-        print("Model expects input shape:", model.input_shape)
-    else:
-        print(f"❌ ERROR: 'model.keras' not found in {BASE_DIR}")
-except Exception as e:
-    print(f"❌ ERROR LOADING MODEL: {e}")
 
-# --- 3. PREDICTION LOGIC ---
-def predict_image(file_path):
-    # 1. Load and resize image to 224x224 (Standard for most Keras models)
-    img = tf.keras.utils.load_img(file_path, target_size=(224, 224))
-    img_array = tf.keras.utils.img_to_array(img)
-    
-    # 2. Add Batch Dimension -> Shape becomes (1, 224, 224, 3)
-    img_array = np.expand_dims(img_array, axis=0)
-    
-    # 3. Normalization (Convert 0-255 to 0-1 range)
-    img_array = img_array.astype('float32') / 255.0
+def allowed_file(filename: str) -> bool:
+    if "." not in filename:
+        return False
+    ext = filename.rsplit(".", 1)[1].lower()
+    return ext in ALLOWED_EXTENSIONS
 
-    # 4. Run Prediction with Error Handling for "Two Inputs"
-    try:
-        # Standard approach
-        predictions = model.predict(img_array)
-    except Exception:
-        # Fallback: wrap in a list if the model expects multiple inputs
-        predictions = model.predict([img_array])
 
-    # 5. Process results
-    # Use softmax to get probabilities
-    score = tf.nn.softmax(predictions[0])
-    result_index = np.argmax(score)
-    
-    label = CLASS_NAMES[result_index]
-    confidence = 100 * np.max(score)
-    
-    return label, f"{confidence:.2f}%"
+# ----------------------------
+# Model: load and predict (implement in model_loader.py)
+# ----------------------------
+from model_loader import load_model, predict_image
 
-# --- 4. ROUTES ---
 
-@app.route('/')
-def index():
-    return render_template('index.html')
+app = Flask(__name__, static_folder="static", template_folder="templates")
+app.secret_key = os.environ.get("FLASK_SECRET_KEY", secrets.token_hex(16))
+app.permanent_session_lifetime = timedelta(hours=2)
+app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
+app.config["STATIC_FOLDER"] = STATIC_FOLDER
 
-@app.route('/predict', methods=['POST'])
+
+# ----------------------------
+# Static pages (your current frontend)
+# ----------------------------
+@app.get("/")
+def home():
+    return send_from_directory(BASE_DIR, "index.html")
+
+@app.get("/index.html")
+def home_html():
+    return send_from_directory(BASE_DIR, "index.html")
+
+
+@app.get("/about")
+def about():
+    return send_from_directory(BASE_DIR, "about.html")
+
+@app.get("/about.html")
+def about_html():
+    return send_from_directory(BASE_DIR, "about.html")
+
+
+@app.get("/upload")
+def upload():
+    return send_from_directory(BASE_DIR, "upload.html")
+
+@app.get("/upload.html")
+def upload_html():
+    return send_from_directory(BASE_DIR, "upload.html")
+
+
+@app.get("/result-page")
+def result_page():
+    # Frontend JS uses sessionStorage; backend /result route below is for server-rendered fallback.
+    return send_from_directory(BASE_DIR, "result.html")
+
+@app.get("/result.html")
+def result_html():
+    return send_from_directory(BASE_DIR, "result.html")
+
+
+@app.get("/styles.css")
+def styles():
+    return send_from_directory(BASE_DIR, "styles.css")
+
+
+# ----------------------------
+# API: predict
+# ----------------------------
+@app.post("/predict")
 def predict():
-    if 'file' not in request.files:
-        return jsonify({'success': False, 'error': 'No file part'}), 400
-    
-    file = request.files['file']
-    if file.filename == '':
-        return jsonify({'success': False, 'error': 'No selected file'}), 400
+    ensure_dirs()
 
-    if file and model:
-        filename = secure_filename(file.filename)
-        temp_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-        file.save(temp_path)
+    if "file" not in request.files:
+        return jsonify({"error": "No file uploaded"}), 400
 
+    file = request.files["file"]
+    if not file or file.filename == "":
+        return jsonify({"error": "No file selected"}), 400
+
+    if not allowed_file(file.filename):
+        return jsonify({"error": "Unsupported file type. Please upload JPG/PNG/WEBP."}), 400
+
+    filename = secure_filename(file.filename)
+    token = secrets.token_hex(8)
+    temp_name = f"temp_{token}_{filename}"
+    filepath = os.path.join(app.config["UPLOAD_FOLDER"], temp_name)
+    file.save(filepath)
+
+    forced_mode = request.form.get("mode")  # optional: 'healthy'/'disease' for demo
+
+    try:
+        prediction = predict_image(filepath, forced_mode=forced_mode)
+
+        # Save to static/images for browser display
+        static_filename = f"upload_{token}.jpg"
+        static_disk_path = os.path.join(STATIC_IMAGES_FOLDER, static_filename)
+        Image.open(filepath).convert("RGB").save(static_disk_path, quality=92)
+
+        # Store in session for /result server route
+        session.permanent = True
+        session["prediction"] = prediction
+        session["image_path"] = f"images/{static_filename}"
+
+        # Cleanup temp file
         try:
-            label, confidence = predict_image(temp_path)
+            os.remove(filepath)
+        except OSError:
+            pass
 
-            unique_name = f"res_{secrets.token_hex(4)}.jpg"
-            static_path = os.path.join(app.config['STATIC_RESULT_FOLDER'], unique_name)
-            
-            with Image.open(temp_path) as img:
-                img.convert('RGB').save(static_path)
+        return jsonify(
+            {
+                "success": True,
+                "prediction": prediction,
+                "image_url": url_for("static", filename=session["image_path"]),
+            }
+        )
+    except Exception as e:
+        try:
+            if os.path.exists(filepath):
+                os.remove(filepath)
+        except OSError:
+            pass
+        return jsonify({"error": str(e)}), 500
 
-            session['prediction'] = label
-            session['confidence'] = confidence
-            session['image_url'] = unique_name
 
-            return jsonify({'success': True})
-        except Exception as e:
-            return jsonify({'success': False, 'error': str(e)}), 500
-        finally:
-            if os.path.exists(temp_path):
-                os.remove(temp_path)
-    else:
-        return jsonify({'success': False, 'error': 'Model not initialized'}), 500
-
-@app.route('/result')
+# ----------------------------
+# Server-rendered result (optional)
+# ----------------------------
+@app.get("/result")
 def result():
-    return render_template('result.html', 
-                           prediction=session.get('prediction'),
-                           confidence=session.get('confidence'),
-                           image_url=session.get('image_url'))
+    prediction = session.get("prediction")
+    image_path = session.get("image_path")
+    if not prediction or not image_path:
+        return redirect(url_for("upload"))
+    return render_template("result_server.html", prediction=prediction, image_url=url_for("static", filename=image_path))
 
-if __name__ == '__main__':
-    app.run(debug=True, port=5000)
+
+if __name__ == "__main__":
+    ensure_dirs()
+    load_model()
+    app.run(debug=True, host="0.0.0.0", port=5000)
+
