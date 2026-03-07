@@ -1,117 +1,219 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Vision | Image Classifier</title>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
-    <style>
-        :root { --primary: #6366f1; --secondary: #a855f7; --bg: #0f172a; }
-        body {
-            font-family: 'Poppins', sans-serif;
-            background: radial-gradient(circle at top left, #1e1b4b, var(--bg));
-            color: white;
-            height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin: 0;
-            overflow: hidden;
-        }
-        .glass-card {
-            background: rgba(255, 255, 255, 0.05);
-            backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            padding: 3rem;
-            border-radius: 24px;
-            text-align: center;
-            width: 400px;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-            animation: fadeIn 0.8s ease-out;
-        }
-        h1 { font-weight: 600; margin-bottom: 0.5rem; letter-spacing: -1px; }
-        p { color: #94a3b8; font-size: 0.9rem; margin-bottom: 2rem; }
-        
-        .upload-area {
-            border: 2px dashed rgba(255, 255, 255, 0.2);
-            border-radius: 16px;
-            padding: 2rem;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-        .upload-area:hover {
-            border-color: var(--primary);
-            background: rgba(99, 102, 241, 0.05);
-        }
-        input[type="file"] { display: none; }
-        
-        button {
-            margin-top: 2rem;
-            width: 100%;
-            background: linear-gradient(135deg, var(--primary), var(--secondary));
-            color: white;
-            border: none;
-            padding: 12px;
-            border-radius: 12px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: transform 0.2s;
-        }
-        button:hover { transform: translateY(-2px); box-shadow: 0 10px 15px -3px rgba(99, 102, 241, 0.4); }
-        button:disabled { opacity: 0.5; cursor: not-allowed; }
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>PlantCare AI - Plant Disease Detection</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="page">
+      <header class="site-header">
+        <div class="container nav">
+          <a href="index.html" class="logo">
+            <div class="logo-mark">P</div>
+            <div>
+              <div class="logo-text">PlantCare AI</div>
+              <div class="logo-sub">Smart plant diagnostics</div>
+            </div>
+          </a>
+          <nav class="nav-links">
+            <a href="index.html" class="nav-link active">Home</a>
+            <a href="about.html" class="nav-link">About</a>
+            <a href="upload.html" class="btn btn-primary">Get Started</a>
+          </nav>
+        </div>
+      </header>
 
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-        
-        #status { margin-top: 1rem; font-size: 0.8rem; color: var(--secondary); display: none; }
-    </style>
-</head>
-<body>
+      <main>
+        <section class="hero">
+          <div class="container hero-grid">
+            <div>
+              <div class="hero-kicker">
+                <span>AI-powered plant diagnostics</span>
+              </div>
+              <h1 class="hero-title">
+                AI‑Powered <span>Plant Disease</span><br />
+                Detection in Seconds
+              </h1>
+              <p class="hero-subtitle">
+                Protect your crops with cutting‑edge artificial intelligence. Detect plant diseases early, reduce crop loss,
+                and make confident decisions using real‑time image analysis.
+              </p>
+              <div class="hero-actions">
+                <a href="upload.html" class="btn btn-primary">Upload Image</a>
+                <a href="about.html" class="btn btn-outline">Learn More</a>
+              </div>
+              <div class="hero-metrics">
+                <div class="metric">
+                  <span class="metric-label">Accuracy</span>
+                  <span class="metric-value">95%+</span>
+                </div>
+                <div class="metric">
+                  <span class="metric-label">Plant diseases</span>
+                  <span class="metric-value">38+</span>
+                </div>
+                <div class="metric">
+                  <span class="metric-label">Supported crops</span>
+                  <span class="metric-value">10+</span>
+                </div>
+                <div class="metric">
+                  <span class="metric-label">Availability</span>
+                  <span class="metric-value">24/7</span>
+                </div>
+              </div>
+            </div>
 
-    <div class="glass-card">
-        <h1>AI Visualizer</h1>
-        <p>Upload an image to see the magic</p>
-        
-        <form id="uploadForm">
-            <label class="upload-area" for="fileInput">
-                <svg width="40" height="40" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="margin-bottom: 1rem; color: #6366f1;">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-                </svg>
-                <div id="fileName">Click to browse or drag & drop</div>
-                <input type="file" id="fileInput" name="file" accept="image/*" required>
-            </label>
-            <button type="submit" id="submitBtn">Generate Prediction</button>
-        </form>
-        <div id="status">Analyzing neural patterns...</div>
+            <aside class="hero-card">
+              <div class="hero-card-inner">
+                <div class="hero-tag">Live analysis preview</div>
+                <div class="hero-image">
+                  <div class="hero-image-placeholder"></div>
+                </div>
+                <div class="hero-status">
+                  <div>
+                    <div class="status-label">Plant type</div>
+                    <div class="status-value">Tomato leaf</div>
+                  </div>
+                  <div>
+                    <div class="status-label">Scan status</div>
+                    <div class="status-value">
+                      <span class="status-pill">
+                        <span class="status-dot"></span>
+                        Healthy plant
+                      </span>
+                    </div>
+                  </div>
+                  <div>
+                    <div class="status-label">Confidence</div>
+                    <div class="status-value">97.2%</div>
+                  </div>
+                  <div>
+                    <div class="status-label">Processing time</div>
+                    <div class="status-value">1.8s</div>
+                  </div>
+                </div>
+              </div>
+            </aside>
+          </div>
+        </section>
+
+        <section class="section">
+          <div class="container">
+            <div class="section-header">
+              <div class="eyebrow">Why choose PlantCare AI?</div>
+              <h2 class="section-title">Built for growers, agronomists, and researchers</h2>
+              <p class="section-subtitle">
+                Upload a single leaf image to instantly detect common plant diseases with production‑ready accuracy.
+              </p>
+            </div>
+
+            <div class="feature-grid">
+              <article class="feature-card">
+                <div class="feature-icon">⚡</div>
+                <h3 class="feature-title">Instant detection</h3>
+                <p class="feature-text">
+                  Get results in seconds using our optimized deep learning pipeline trained on thousands of leaf images.
+                </p>
+              </article>
+
+              <article class="feature-card">
+                <div class="feature-icon">🎯</div>
+                <h3 class="feature-title">High accuracy</h3>
+                <p class="feature-text">
+                  Powered by state‑of‑the‑art convolutional networks and domain‑specific augmentation for real‑field data.
+                </p>
+              </article>
+
+              <article class="feature-card">
+                <div class="feature-icon">👌</div>
+                <h3 class="feature-title">Easy to use</h3>
+                <p class="feature-text">
+                  Simple, intuitive interface. Just upload a photo of an affected leaf—no hardware or technical setup required.
+                </p>
+              </article>
+            </div>
+
+            <div class="stats-band">
+              <div>
+                <div class="stats-copy-title">Ready to protect your plants?</div>
+                <div class="stats-copy-sub">
+                  Start detecting plant diseases today with our web‑based AI platform.
+                </div>
+                <div class="mt-sm">
+                  <a href="upload.html" class="btn btn-primary">Get Started Now</a>
+                </div>
+              </div>
+
+              <div class="stats-row">
+                <div class="stat-item">
+                  <div class="stat-num">38+</div>
+                  <div class="stat-label">Plant diseases</div>
+                </div>
+                <div class="stat-item">
+                  <div class="stat-num">95%</div>
+                  <div class="stat-label">Accuracy rate</div>
+                </div>
+                <div class="stat-item">
+                  <div class="stat-num">10+</div>
+                  <div class="stat-label">Plant species</div>
+                </div>
+                <div class="stat-item">
+                  <div class="stat-num">24/7</div>
+                  <div class="stat-label">Available</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="section">
+          <div class="container two-col">
+            <div>
+              <span class="pill-label">About the platform</span>
+              <h2 class="about-title">AI‑Powered Plant Disease Detection System</h2>
+              <p class="lead">
+                Our deep learning models are trained on real‑field plant images captured under different lighting, angles, and growth
+                stages. This lets PlantCare AI deliver robust predictions that generalize beyond lab environments.
+              </p>
+              <ul class="bullet-list">
+                <li>Identify diseases early, before symptoms spread across the crop.</li>
+                <li>Reduce pesticide misuse with targeted, data‑driven recommendations.</li>
+                <li>Make informed decisions on irrigation, fertilization, and yield planning.</li>
+              </ul>
+            </div>
+            <aside class="about-card">
+              <div class="about-tag">Our AI model at a glance</div>
+              <div class="about-grid">
+                <div>
+                  <div class="mini-label">Architecture</div>
+                  <div class="mini-value">EfficientNet‑based classifier</div>
+                </div>
+                <div>
+                  <div class="mini-label">Training data</div>
+                  <div class="mini-value">Thousands of labeled leaf images</div>
+                </div>
+                <div>
+                  <div class="mini-label">Supported plants</div>
+                  <div class="mini-value">Tomato, potato, corn, apple, and more</div>
+                </div>
+                <div>
+                  <div class="mini-label">Coverage</div>
+                  <div class="mini-value">30+ common crop diseases</div>
+                </div>
+              </div>
+            </aside>
+          </div>
+        </section>
+      </main>
+
+      <footer id="footer" class="site-footer">
+        <div class="container footer-inner">
+          <div>© 2025 PlantCare AI. All rights reserved.</div>
+          <div>Empowering agriculture through intelligent image analysis.</div>
+        </div>
+      </footer>
     </div>
-
-    <script>
-        const fileInput = document.getElementById('fileInput');
-        const fileNameDiv = document.getElementById('fileName');
-        const form = document.getElementById('uploadForm');
-
-        fileInput.onchange = () => {
-            if(fileInput.files.length > 0) fileNameDiv.innerText = fileInput.files[0].name;
-        };
-
-        form.onsubmit = async (e) => {
-            e.preventDefault();
-            document.getElementById('status').style.display = 'block';
-            document.getElementById('submitBtn').disabled = true;
-
-            const formData = new FormData();
-            formData.append('file', fileInput.files[0]);
-
-            const response = await fetch('/predict', { method: 'POST', body: formData });
-            const data = await response.json();
-
-            if (data.success) {
-                window.location.href = '/result';
-            } else {
-                alert("Error: " + data.error);
-                document.getElementById('submitBtn').disabled = false;
-                document.getElementById('status').style.display = 'none';
-            }
-        };
-    </script>
-</body>
+  </body>
 </html>
+

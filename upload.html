@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Upload Plant Image - PlantCare AI</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="page">
+      <header class="site-header">
+        <div class="container nav">
+          <a href="index.html" class="logo">
+            <div class="logo-mark">P</div>
+            <div>
+              <div class="logo-text">PlantCare AI</div>
+              <div class="logo-sub">Smart plant diagnostics</div>
+            </div>
+          </a>
+          <nav class="nav-links">
+            <a href="index.html" class="nav-link">Home</a>
+            <a href="about.html" class="nav-link">About</a>
+            <a href="upload.html" class="btn btn-primary">Get Started</a>
+          </nav>
+        </div>
+      </header>
+
+      <main>
+        <section class="upload-wrapper">
+          <div class="container">
+            <div class="upload-card">
+              <div class="upload-header">
+                <div class="eyebrow">New analysis</div>
+                <h1 class="upload-title">Upload Plant Image</h1>
+                <p class="upload-subtitle">
+                  Take or upload a clear photo of the affected leaf to start the analysis.
+                </p>
+              </div>
+
+              <div class="dropzone" id="dropzone" role="button" tabindex="0" aria-label="Upload image dropzone">
+                <div class="drop-icon">⬆️</div>
+                <h2 class="drop-title">Drag &amp; drop image here</h2>
+                <p class="drop-text">or click the button below to browse from your device.</p>
+                <p class="drop-meta">Supported formats: JPG, JPEG, PNG · Max size: 10MB</p>
+                <input id="fileInput" type="file" accept="image/*" hidden />
+                <button type="button" class="btn btn-primary" id="chooseBtn">Choose Image</button>
+                <div class="drop-or" id="hintText">After selecting, click Analyze to see results.</div>
+
+                <div class="drop-preview" id="previewWrap" aria-live="polite">
+                  <img id="previewImg" class="preview-img" alt="Selected plant image preview" />
+                </div>
+
+                <div class="upload-controls">
+                  <button type="button" class="btn btn-primary" id="analyzeBtn" disabled>Analyze</button>
+                </div>
+
+                <div class="upload-error" id="errorText" role="alert" aria-live="assertive"></div>
+              </div>
+
+              <div class="tips-card">
+                <div class="tips-title">Tips for best results</div>
+                <div class="tips-grid">
+                  <div class="tip">
+                    <div class="tip-check">✓</div>
+                    <div>Take photos in good, even lighting.</div>
+                  </div>
+                  <div class="tip">
+                    <div class="tip-check">✓</div>
+                    <div>Center the affected leaf in the frame.</div>
+                  </div>
+                  <div class="tip">
+                    <div class="tip-check">✓</div>
+                    <div>Avoid blurry or low‑resolution images.</div>
+                  </div>
+                  <div class="tip">
+                    <div class="tip-check">✓</div>
+                    <div>Get close enough to capture lesion details.</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+      </main>
+
+      <footer id="footer" class="site-footer">
+        <div class="container footer-inner">
+          <div>© 2025 PlantCare AI. All rights reserved.</div>
+          <div>Empowering agriculture through intelligent image analysis.</div>
+        </div>
+      </footer>
+    </div>
+
+    <script>
+      (function () {
+        const dropzone = document.getElementById("dropzone");
+        const fileInput = document.getElementById("fileInput");
+        const chooseBtn = document.getElementById("chooseBtn");
+        const analyzeBtn = document.getElementById("analyzeBtn");
+        const previewWrap = document.getElementById("previewWrap");
+        const previewImg = document.getElementById("previewImg");
+        const errorText = document.getElementById("errorText");
+
+        const STORAGE_KEY = "plantcare_uploaded_image";
+        const PREDICTION_KEY = "plantcare_prediction";
+        const IMAGE_URL_KEY = "plantcare_image_url";
+        const MODE_KEY = "plantcare_result_mode";
+
+        let imageDataUrl = null;
+        let selectedFile = null;
+        let filenameHint = "";
+
+        function setError(message) {
+          errorText.textContent = message || "";
+        }
+
+        function setPreview(dataUrl) {
+          imageDataUrl = dataUrl;
+          previewImg.src = dataUrl;
+          previewWrap.classList.add("show");
+          analyzeBtn.disabled = false;
+          setError("");
+        }
+
+        function handleFile(file) {
+          if (!file) return;
+          if (!file.type || !file.type.startsWith("image/")) {
+            setError("Please upload an image file (JPG/PNG).");
+            return;
+          }
+          selectedFile = file;
+          filenameHint = (file && file.name ? String(file.name) : "").toLowerCase();
+
+          const reader = new FileReader();
+          reader.onload = () => setPreview(String(reader.result || ""));
+          reader.onerror = () => setError("Failed to read the image. Please try again.");
+          reader.readAsDataURL(file);
+        }
+
+        chooseBtn.addEventListener("click", () => fileInput.click());
+        fileInput.addEventListener("change", () => handleFile(fileInput.files && fileInput.files[0]));
+
+        dropzone.addEventListener("click", (e) => {
+          if (e.target === chooseBtn || e.target === analyzeBtn) return;
+          fileInput.click();
+        });
+
+        dropzone.addEventListener("keydown", (e) => {
+          if (e.key === "Enter" || e.key === " ") fileInput.click();
+        });
+
+        dropzone.addEventListener("dragover", (e) => {
+          e.preventDefault();
+          dropzone.classList.add("dragover");
+        });
+        dropzone.addEventListener("dragleave", () => dropzone.classList.remove("dragover"));
+        dropzone.addEventListener("drop", (e) => {
+          e.preventDefault();
+          dropzone.classList.remove("dragover");
+          const file = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+          handleFile(file);
+        });
+
+        analyzeBtn.addEventListener("click", () => {
+          if (!imageDataUrl || !selectedFile) {
+            setError("Please choose an image first.");
+            return;
+          }
+
+          // Always keep client-side fallback available
+          sessionStorage.setItem(STORAGE_KEY, imageDataUrl);
+
+          const fd = new FormData();
+          fd.append("file", selectedFile);
+
+          analyzeBtn.disabled = true;
+          analyzeBtn.textContent = "Analyzing...";
+          setError("");
+
+          fetch("/predict", { method: "POST", body: fd })
+            .then(async (res) => {
+              const data = await res.json().catch(() => ({}));
+              if (!res.ok) throw new Error(data.error || "Prediction failed");
+              return data;
+            })
+            .then((data) => {
+              if (data && data.prediction) {
+                sessionStorage.setItem(PREDICTION_KEY, JSON.stringify(data.prediction));
+                if (data.image_url) sessionStorage.setItem(IMAGE_URL_KEY, data.image_url);
+                if (data.prediction.mode) sessionStorage.setItem(MODE_KEY, data.prediction.mode);
+              }
+              window.location.href = "result.html";
+            })
+            .catch((err) => {
+              // If backend isn't running, keep the demo flow working.
+              // We guess a mode from filename keywords; otherwise default to healthy.
+              const guessDisease =
+                filenameHint.includes("rust") ||
+                filenameHint.includes("blight") ||
+                filenameHint.includes("disease") ||
+                filenameHint.includes("spot") ||
+                filenameHint.includes("mildew");
+              sessionStorage.setItem(MODE_KEY, guessDisease ? "disease" : "healthy");
+              setError(String(err && err.message ? err.message : "Backend not available. Showing demo result."));
+              window.location.href = "result.html";
+            })
+            .finally(() => {
+              analyzeBtn.disabled = false;
+              analyzeBtn.textContent = "Analyze";
+            });
+        });
+      })();
+    </script>
+  </body>
+</html>

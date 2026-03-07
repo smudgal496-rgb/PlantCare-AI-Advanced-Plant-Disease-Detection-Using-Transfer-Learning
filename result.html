@@ -1,91 +1,219 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Result</title>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
-    <style>
-        :root { --primary: #10b981; --bg: #0f172a; }
-        body {
-            font-family: 'Poppins', sans-serif;
-            background: var(--bg);
-            color: white;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            min-height: 100vh;
-            margin: 0;
-        }
-        .container {
-            text-align: center;
-            max-width: 500px;
-            padding: 2rem;
-            animation: fadeIn 0.5s ease;
-        }
-        .image-wrapper {
-            position: relative;
-            display: inline-block;
-            border-radius: 20px;
-            overflow: hidden;
-            border: 2px solid rgba(16, 185, 129, 0.3);
-            margin: 2rem 0;
-        }
-        img { max-width: 100%; display: block; }
-        
-        /* Scanning Animation */
-        .scan-line {
-            position: absolute;
-            top: 0; left: 0; width: 100%; height: 4px;
-            background: var(--primary);
-            box-shadow: 0 0 15px var(--primary);
-            animation: scan 3s linear infinite;
-        }
-        @keyframes scan {
-            0% { top: 0%; }
-            50% { top: 100%; }
-            100% { top: 0%; }
-        }
-
-        .prediction-badge {
-            background: rgba(16, 185, 129, 0.1);
-            border: 1px solid var(--primary);
-            color: var(--primary);
-            padding: 10px 20px;
-            border-radius: 50px;
-            font-size: 1.2rem;
-            font-weight: 600;
-            display: inline-block;
-        }
-        .back-link {
-            display: block;
-            margin-top: 2rem;
-            color: #94a3b8;
-            text-decoration: none;
-            transition: color 0.3s;
-        }
-        .back-link:hover { color: white; }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-    </style>
-</head>
-<body>
-
-    <div class="container">
-        <h1>Analysis Result</h1>
-        
-        <div class="image-wrapper">
-            <div class="scan-line"></div>
-            {% if image_url %}
-            <img src="{{ url_for('static', filename='images/' + image_url) }}" alt="Result Image">
-            {% endif %}
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Analysis Complete | PlantCare AI</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="page">
+      <header class="site-header">
+        <div class="container nav">
+          <a href="index.html" class="logo">
+            <div class="logo-mark">P</div>
+            <div>
+              <div class="logo-text">PlantCare AI</div>
+              <div class="logo-sub">Smart plant diagnostics</div>
+            </div>
+          </a>
+          <nav class="nav-links">
+            <a href="index.html" class="nav-link">Home</a>
+            <a href="about.html" class="nav-link">About</a>
+            <a href="upload.html" class="btn btn-primary">Get Started</a>
+          </nav>
         </div>
+      </header>
 
-        <div class="prediction-badge">
-    {{ prediction }} ({{ confidence }} Confident)
-</div>
+      <main>
+        <section class="analysis-wrapper">
+          <div class="container">
+            <div class="analysis-header">
+              <div class="eyebrow">Analysis complete</div>
+              <h1 class="analysis-title" id="resultTitle">Here’s what we found</h1>
+              <p class="analysis-subtitle">View your analysis result below.</p>
+            </div>
 
-        <a href="/" class="back-link">← Analyze Another Image</a>
+            <div class="analysis-grid">
+              <article class="uploaded-card">
+                <div class="uploaded-title">Uploaded image</div>
+                <div class="uploaded-image-box">
+                  <div class="uploaded-image-inner" id="uploadedImage"></div>
+                </div>
+              </article>
+
+              <article class="result-card">
+                <!-- Healthy layout -->
+                <div id="healthyLayout" class="result-layout" hidden>
+                  <div class="result-header-row">
+                    <div class="badge-pill badge-success">
+                      <span class="icon">✔</span>
+                      Healthy plant detected
+                    </div>
+                    <div class="result-scan-id">Scan ID: DEMO‑001</div>
+                  </div>
+                  <div class="result-meta">
+                    <div>
+                      <div class="result-label">Plant type</div>
+                      <div class="result-value" id="healthyPlantType">Tomato</div>
+                    </div>
+                    <div>
+                      <div class="result-label">Condition</div>
+                      <div class="result-value" id="healthyCondition">Healthy</div>
+                    </div>
+                    <div>
+                      <div class="result-label">Confidence</div>
+                      <div class="result-value" id="healthyConfidence">97.2%</div>
+                    </div>
+                    <div>
+                      <div class="result-label">Last updated</div>
+                      <div class="result-value" id="healthyUpdated">Just now</div>
+                    </div>
+                  </div>
+                  <div class="callout">
+                    <div class="callout-title">Keep your plant healthy</div>
+                    <ul class="callout-list" id="healthyActions">
+                      <li>Maintain consistent watering and avoid waterlogging the soil.</li>
+                      <li>Ensure 6–8 hours of indirect sunlight per day.</li>
+                      <li>Monitor regularly for new spots, discoloration, or curling leaves and rescan if anything changes.</li>
+                      <li>Use balanced fertilizer as recommended for your crop and region.</li>
+                    </ul>
+                  </div>
+                </div>
+
+                <!-- Disease layout -->
+                <div id="diseaseLayout" class="result-layout" hidden>
+                  <div class="result-header-row">
+                    <div class="badge-pill badge-danger">
+                      <span class="icon">✕</span>
+                      Disease detected
+                    </div>
+                    <div class="result-scan-id">Scan ID: DEMO‑002</div>
+                  </div>
+                  <div class="result-meta">
+                    <div>
+                      <div class="result-label">Plant type</div>
+                      <div class="result-value" id="diseasePlantType">Corn (maize)</div>
+                    </div>
+                    <div>
+                      <div class="result-label">Detected disease</div>
+                      <div class="result-value" id="diseaseName">Common rust</div>
+                    </div>
+                    <div>
+                      <div class="result-label">Confidence</div>
+                      <div class="result-value" id="diseaseConfidence">93.4%</div>
+                    </div>
+                    <div>
+                      <div class="result-label">Severity (estimated)</div>
+                      <div class="result-value" id="diseaseSeverity">Moderate</div>
+                    </div>
+                  </div>
+                  <div class="callout">
+                    <div class="callout-title">Recommended actions</div>
+                    <ul class="callout-list" id="diseaseActions">
+                      <li>Isolate heavily infected plants where possible to limit spread.</li>
+                      <li>Consider using a fungicide recommended for common rust in your region and crop variety. Follow label directions.</li>
+                      <li>Improve airflow by managing plant spacing and removing excessive lower leaves where feasible.</li>
+                      <li>Monitor neighboring plants closely and rescan if symptoms worsen or expand.</li>
+                    </ul>
+                  </div>
+                </div>
+
+                <div class="analysis-actions">
+                  <a href="upload.html" class="btn btn-primary">Analyze Another Image</a>
+                  <a href="index.html" class="btn btn-outline">Back to Home</a>
+                </div>
+              </article>
+            </div>
+          </div>
+        </section>
+      </main>
+
+      <footer id="footer" class="site-footer">
+        <div class="container footer-inner">
+          <div>© 2025 PlantCare AI. All rights reserved.</div>
+          <div>Empowering agriculture through intelligent image analysis.</div>
+        </div>
+      </footer>
     </div>
 
-</body>
+    <script>
+      (function () {
+        const IMAGE_DATA_KEY = "plantcare_uploaded_image";
+        const IMAGE_URL_KEY = "plantcare_image_url";
+        const MODE_KEY = "plantcare_result_mode";
+        const PREDICTION_KEY = "plantcare_prediction";
+
+        const mode = sessionStorage.getItem(MODE_KEY) || "healthy";
+        const imageUrl = sessionStorage.getItem(IMAGE_URL_KEY);
+        const imageDataUrl = sessionStorage.getItem(IMAGE_DATA_KEY);
+        const predictionRaw = sessionStorage.getItem(PREDICTION_KEY);
+        const prediction = predictionRaw ? JSON.parse(predictionRaw) : null;
+
+        const titleEl = document.getElementById("resultTitle");
+        const uploadedEl = document.getElementById("uploadedImage");
+        const healthyLayout = document.getElementById("healthyLayout");
+        const diseaseLayout = document.getElementById("diseaseLayout");
+
+        const resolvedMode = (prediction && prediction.mode) || mode;
+
+        if (resolvedMode === "disease") {
+          titleEl.textContent = "A disease has been detected";
+          healthyLayout.hidden = true;
+          diseaseLayout.hidden = false;
+        } else {
+          titleEl.textContent = "Here's what we found";
+          healthyLayout.hidden = false;
+          diseaseLayout.hidden = true;
+        }
+
+        const chosenImage = imageUrl || imageDataUrl;
+        if (chosenImage && uploadedEl) {
+          uploadedEl.style.backgroundImage = "url('" + chosenImage + "')";
+          uploadedEl.style.backgroundSize = "cover";
+          uploadedEl.style.backgroundPosition = "center";
+        }
+
+        if (!prediction) return;
+
+        if (prediction.mode === "healthy") {
+          const plantType = document.getElementById("healthyPlantType");
+          const condition = document.getElementById("healthyCondition");
+          const confidence = document.getElementById("healthyConfidence");
+          const actions = document.getElementById("healthyActions");
+          if (plantType) plantType.textContent = prediction.plant_type || plantType.textContent;
+          if (condition) condition.textContent = prediction.condition || condition.textContent;
+          if (confidence) confidence.textContent = (prediction.confidence != null ? prediction.confidence : 0) + "%";
+          if (actions && Array.isArray(prediction.actions)) {
+            actions.innerHTML = "";
+            prediction.actions.forEach((a) => {
+              const li = document.createElement("li");
+              li.textContent = String(a);
+              actions.appendChild(li);
+            });
+          }
+        }
+
+        if (prediction.mode === "disease") {
+          const plantType = document.getElementById("diseasePlantType");
+          const diseaseName = document.getElementById("diseaseName");
+          const confidence = document.getElementById("diseaseConfidence");
+          const severity = document.getElementById("diseaseSeverity");
+          const actions = document.getElementById("diseaseActions");
+          if (plantType) plantType.textContent = prediction.plant_type || plantType.textContent;
+          if (diseaseName) diseaseName.textContent = prediction.condition || diseaseName.textContent;
+          if (confidence) confidence.textContent = (prediction.confidence != null ? prediction.confidence : 0) + "%";
+          if (severity) severity.textContent = prediction.severity || severity.textContent;
+          if (actions && Array.isArray(prediction.actions)) {
+            actions.innerHTML = "";
+            prediction.actions.forEach((a) => {
+              const li = document.createElement("li");
+              li.textContent = String(a);
+              actions.appendChild(li);
+            });
+          }
+        }
+      })();
+    </script>
+  </body>
 </html>
