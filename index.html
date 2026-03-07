@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Vision | Image Classifier</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        :root { --primary: #6366f1; --secondary: #a855f7; --bg: #0f172a; }
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: radial-gradient(circle at top left, #1e1b4b, var(--bg));
+            color: white;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0;
+            overflow: hidden;
+        }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 3rem;
+            border-radius: 24px;
+            text-align: center;
+            width: 400px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            animation: fadeIn 0.8s ease-out;
+        }
+        h1 { font-weight: 600; margin-bottom: 0.5rem; letter-spacing: -1px; }
+        p { color: #94a3b8; font-size: 0.9rem; margin-bottom: 2rem; }
+        
+        .upload-area {
+            border: 2px dashed rgba(255, 255, 255, 0.2);
+            border-radius: 16px;
+            padding: 2rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .upload-area:hover {
+            border-color: var(--primary);
+            background: rgba(99, 102, 241, 0.05);
+        }
+        input[type="file"] { display: none; }
+        
+        button {
+            margin-top: 2rem;
+            width: 100%;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        button:hover { transform: translateY(-2px); box-shadow: 0 10px 15px -3px rgba(99, 102, 241, 0.4); }
+        button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        
+        #status { margin-top: 1rem; font-size: 0.8rem; color: var(--secondary); display: none; }
+    </style>
+</head>
+<body>
+
+    <div class="glass-card">
+        <h1>AI Visualizer</h1>
+        <p>Upload an image to see the magic</p>
+        
+        <form id="uploadForm">
+            <label class="upload-area" for="fileInput">
+                <svg width="40" height="40" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="margin-bottom: 1rem; color: #6366f1;">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                </svg>
+                <div id="fileName">Click to browse or drag & drop</div>
+                <input type="file" id="fileInput" name="file" accept="image/*" required>
+            </label>
+            <button type="submit" id="submitBtn">Generate Prediction</button>
+        </form>
+        <div id="status">Analyzing neural patterns...</div>
+    </div>
+
+    <script>
+        const fileInput = document.getElementById('fileInput');
+        const fileNameDiv = document.getElementById('fileName');
+        const form = document.getElementById('uploadForm');
+
+        fileInput.onchange = () => {
+            if(fileInput.files.length > 0) fileNameDiv.innerText = fileInput.files[0].name;
+        };
+
+        form.onsubmit = async (e) => {
+            e.preventDefault();
+            document.getElementById('status').style.display = 'block';
+            document.getElementById('submitBtn').disabled = true;
+
+            const formData = new FormData();
+            formData.append('file', fileInput.files[0]);
+
+            const response = await fetch('/predict', { method: 'POST', body: formData });
+            const data = await response.json();
+
+            if (data.success) {
+                window.location.href = '/result';
+            } else {
+                alert("Error: " + data.error);
+                document.getElementById('submitBtn').disabled = false;
+                document.getElementById('status').style.display = 'none';
+            }
+        };
+    </script>
+</body>
+</html>
